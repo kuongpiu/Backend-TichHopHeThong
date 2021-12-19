@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface SubscriberRepository extends JpaRepository<Subscriber, Integer> {
     List<Subscriber> findByCityId(Integer cityId);
+    List<Subscriber> findByUsername(String username);
+    Subscriber findByCityIdAndUsername(Integer cityId, String username);
 }

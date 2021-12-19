@@ -43,9 +43,9 @@ public class MessagingController {
         List<City> cities = convertToCityObj(citiesIdRaw);
 //        List<MessageInfo> messageInfos = new ArrayList<>();
 
-        for (City city: cities){
+        for (City city : cities) {
             List<Subscriber> subscribersByCity = subscriberRepository.findByCityId(city.getId());
-            for (Subscriber subscriber: subscribersByCity){
+            for (Subscriber subscriber : subscribersByCity) {
                 String username = subscriber.getUsername();
                 User user = userRepository.findByUsername(username);
                 telegramUserSubs.add(user);
@@ -63,13 +63,14 @@ public class MessagingController {
         return sendingMessageVieTelegram;
 //        return messageInfos; // id, City, Message
     }
-    private List<City> convertToCityObj(String citiesIdRaw){
+
+    private List<City> convertToCityObj(String citiesIdRaw) {
         String[] citiesId = citiesIdRaw.split(",");
         List<City> cities = new ArrayList<>();
 
         for (String cityId : citiesId) {
             Optional<City> cityOptional = cityRepository.findById(Integer.parseInt(cityId));
-            if(cityOptional.isPresent()){
+            if (cityOptional.isPresent()) {
                 cities.add(cityOptional.get());
             }
         }
@@ -86,27 +87,69 @@ public class MessagingController {
         Message message = new Message();
         message.setContent(content);
         message.setCreated_user(getCurrentUsername());
-        long millis=System.currentTimeMillis();
+        long millis = System.currentTimeMillis();
         Date date = new Date(millis);
         message.setDate(date);
         return this.messageRepository.save(message);
     }
 
+    @GetMapping("/subscribe")
+    public List<City> getSubscribeCities() {
+        String username = getCurrentUsername();
+        List<Subscriber> subscribers = subscriberRepository.findByUsername(username);
+        List<City> cities = new ArrayList<>();
+        for(Subscriber subscriber: subscribers){
+            Optional<City> cityOptional = cityRepository.findById(subscriber.getCityId());
+            if(cityOptional.isPresent()){
+                cities.add(cityOptional.get());
+            }
+        }
+        return cities;
+    }
+
     @PostMapping("/subscribe")
-    public List<Subscriber> subscribe(@RequestBody Map<String, String> input) {
+    public List<City> subscribe(@RequestBody Map<String, String> input) {
         String username = getCurrentUsername();
         String citiesIdRaw = input.get("cities");
-        List<City> cities = convertToCityObj(citiesIdRaw);
-        List<Subscriber> subscribers = new ArrayList<>();
-        StringBuilder builder = new StringBuilder();
-        for (City city: cities){
-            builder.append(city.getName() + ", ");
-            Subscriber Subscriber = new Subscriber();
-            Subscriber.setCityId(city.getId());
-            Subscriber.setUsername(username);
-            subscribers.add(subscriberRepository.save(Subscriber));
+        String[] newCitiesId = citiesIdRaw.split(",");
+
+        Set<Integer> newCitiesIdSet = new HashSet<>();
+        for (String newCityId: newCitiesId){
+            try{
+                newCitiesIdSet.add(Integer.parseInt(newCityId));
+            }catch (NumberFormatException e){
+                e.printStackTrace();
+            }
         }
-        System.out.println("username: " + username + ", dang ky: " + builder.toString());
-        return subscribers;
+        List<Subscriber> oldSubscribers = subscriberRepository.findByUsername(username);
+        List<Integer> oldCitiesId = new ArrayList<>();
+        for(Subscriber subscriber: oldSubscribers){
+            oldCitiesId.add(subscriber.getCityId());
+        }
+        for (Integer oldCityId: oldCitiesId){
+            if (newCitiesIdSet.contains(oldCityId)){
+                newCitiesIdSet.remove(oldCityId);
+                continue;
+            }
+            Subscriber subscriber = subscriberRepository.findByCityIdAndUsername(oldCityId, username);
+            if(subscriber != null){
+                subscriberRepository.delete(subscriber);
+            }
+        }
+
+        if(!newCitiesIdSet.isEmpty()){
+            for (Object cityId: newCitiesIdSet.toArray()) {
+                try{
+                    Subscriber Subscriber = new Subscriber();
+                    Subscriber.setCityId((Integer) cityId);
+                    Subscriber.setUsername(username);
+                    subscriberRepository.save(Subscriber);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return this.getSubscribeCities();
     }
 }
