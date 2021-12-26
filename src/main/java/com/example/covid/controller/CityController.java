@@ -3,7 +3,6 @@ package com.example.covid.controller;
 import com.example.covid.entity.City;
 import com.example.covid.repository.CityRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

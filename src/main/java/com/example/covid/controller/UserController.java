@@ -17,8 +17,6 @@ import java.util.Map;
 @RequestMapping("/user")
 public class UserController {
     @Autowired
-    private UserRepository userRepository;
-    @Autowired
     private UserService userService;
 
     @GetMapping
@@ -31,9 +29,13 @@ public class UserController {
         return userService.updateUserInfo(infoUpdated);
     }
 
+    @GetMapping("/check-in-history/all")
+    public List<CheckIn> getAllCheckInHistory() {
+        return userService.getAllCheckInHistory();
+    }
     @GetMapping("/check-in-history")
-    public List<CheckIn> getCheckInHistory() {
-        return userService.getCheckInHistory();
+    public CheckIn getCheckInHistoryById(@RequestParam Integer id){
+        return userService.getCheckInHistoryById(id);
     }
 
     @PostMapping("/check-in-history")

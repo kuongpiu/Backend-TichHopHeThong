@@ -50,13 +50,27 @@ public class UserService {
         return userRepo.save(currentUser);
     }
 
-    public List<CheckIn> getCheckInHistory() {
+    public List<CheckIn> getAllCheckInHistory() {
         User currentUser = getCurrentUserInfo();
         if (currentUser != null) {
             String username = currentUser.getUsername();
             return checkInRepo.findByUsernameOrderByDateDesc(username);
         }
         return null;
+    }
+
+    public CheckIn getCheckInHistoryById(Integer id){
+        Optional<CheckIn> optionalCheckIn = checkInRepo.findById(id);
+        if(optionalCheckIn.isPresent()){
+            CheckIn checkIn = optionalCheckIn.get();
+            if(checkIn.getUsername().equals(SecurityContextHolder.getContext().getAuthentication().getName())){
+                return checkIn;
+            }else{
+                return null;
+            }
+        }else{
+            return null;
+        }
     }
 
     public CheckIn insertCheckIn(CheckIn checkIn) {
